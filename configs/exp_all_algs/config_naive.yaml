@@ -1,0 +1,29 @@
+agg_function_name: sum
+aggregator_kwargs: {}
+aggregator_name: naive
+dataset_kwargs:
+  combine_sales: true
+dataset_name: vgsales
+imputer_kwargs: {}
+imputer_name: basic
+k:
+- 1
+- 2
+- 3
+- 4
+- 5
+- 6
+- 7
+- 8
+- 9
+- 10
+- 15
+- 20
+output_path: outputs/sales_only/vgsales_combined_naive
+p_erase: 0
+scorer_kwargs:
+  columns_to_drop:
+  - earliest_year
+  - num_platforms
+  normalize: true
+seed: 42

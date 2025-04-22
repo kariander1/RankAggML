@@ -1,0 +1,12 @@
+agg_function_name: avg
+aggregator_kwargs: {}
+aggregator_name: fagin
+dataset_kwargs: {}
+dataset_name: toy
+imputer_kwargs: {}
+imputer_name: basic
+k: 3
+output_path: outputs/toy_fagin
+p_erase: 0
+scorer_kwargs: {}
+seed: 42

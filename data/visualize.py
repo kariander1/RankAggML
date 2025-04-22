@@ -10,7 +10,6 @@ os.makedirs("outputs/data", exist_ok=True)
 # Load dataset
 df = pd.read_csv("data/vgsales.csv")
 
-# --- 1. Histogram of games by release year ---
 plt.figure(figsize=(10, 6))
 df['Year'].dropna().astype(int).value_counts().sort_index().plot(kind='bar')
 plt.title("Number of Games Released by Year")
@@ -20,7 +19,6 @@ plt.tight_layout()
 plt.savefig("outputs/data/games_by_year.jpg")
 plt.close()
 
-# --- 2. Games released on multiple platforms ---
 multi_platform_counts = df.groupby('Name')['Platform'].nunique()
 multi_platform = multi_platform_counts[multi_platform_counts > 0]
 
@@ -33,7 +31,6 @@ plt.tight_layout()
 plt.savefig("outputs/data/multi_platform_games.jpg")
 plt.close()
 
-# --- 3. Histogram of game genres ---
 plt.figure(figsize=(10, 6))
 df['Genre'].value_counts().plot(kind='bar')
 plt.title("Distribution of Game Genres")
@@ -43,7 +40,6 @@ plt.tight_layout()
 plt.savefig("outputs/data/genre_histogram.jpg")
 plt.close()
 
-# --- 4. Top 10 publishers by number of games ---
 top_publishers = df['Publisher'].value_counts().head(10)
 
 plt.figure(figsize=(10, 6))
@@ -55,7 +51,6 @@ plt.tight_layout()
 plt.savefig("outputs/data/top_10_publishers.jpg")
 plt.close()
 
-# --- 5. Top 10 best-selling games in each region ---
 region_cols = ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales']
 top_games_by_region = {}
 
@@ -78,14 +73,11 @@ for region in region_cols:
 #
 
 
-# Compute total global sales
 df['Global_Sales'] = df[region_cols].sum(axis=1)
 
-# Select top 10 global games
 top_global = df.groupby('Name')[region_cols + ['Global_Sales']].sum()
 top10 = top_global.sort_values(by='Global_Sales', ascending=False).head(10)
 
-# Drop global sales (only need per-region for stacking)
 top10 = top10[region_cols]
 
 # Plot

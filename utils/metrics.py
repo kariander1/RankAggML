@@ -55,19 +55,6 @@ from typing import Optional
 
 
 def find_and_combine_csvs(base_dir: str, csv_filename: str, dir_pattern: Optional[str] = None, verbose: bool = True) -> Optional[pd.DataFrame]:
-    """
-    Search recursively through base_dir for subdirectories that match the given pattern,
-    load CSV files with the specified name, and combine them into a single DataFrame.
-
-    Args:
-        base_dir (str): Root directory to search in.
-        csv_filename (str): Target CSV filename to look for in each subdirectory.
-        dir_pattern (Optional[str]): If provided, only include subdirectories whose names contain this pattern.
-        verbose (bool): Whether to print loading messages.
-
-    Returns:
-        Optional[pd.DataFrame]: Combined DataFrame or None if no matches found.
-    """
     combined_dfs = []
 
     for root, _, files in os.walk(base_dir):
