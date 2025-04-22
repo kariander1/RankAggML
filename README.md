@@ -11,6 +11,25 @@ This project explores the problem of **rank aggregation**—combining multiple r
 To address inefficiencies in NRA, particularly when the number of desired results \( k \) is large, we introduce a variant called **NRA w/ Imputer**, which uses imputation to estimate missing scores and enable earlier stopping.
 
 
+## ⚙️ Installation
+
+To get started, ensure you're using **Python 3.8**, and follow these steps:
+
+1. **Create a virtual environment (recommended):**
+
+```bash
+python3.8 -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
+```
+
+2. **Install dependencies:**
+
+```bash
+pip install -r requirements.txt
+```
+
+This will install all necessary libraries including `pandas`, `scikit-learn`, `matplotlib`, `numpy`, and more as needed for running aggregation experiments and visualizations.
+
 ## 🧪 Running the Code
 
 You can run any experiment using a YAML config file or by explicitly passing arguments on the command line.
