@@ -1,24 +1,32 @@
 import pandas as pd
 
-def basic_impute(df: pd.DataFrame, **kwargs) -> pd.DataFrame:
-    """
-    Generic basic imputation:
-    - Numeric columns: fill with mean
-    - Object/string columns: fill with mode, or 'No Data' if mode not available
-    """
-    df = df.copy()
+class BasicImputer:
 
-    for col in df.columns:
-        if df[col].isnull().any():
-            if pd.api.types.is_numeric_dtype(df[col]):
-                # Numeric: fill with mean
-                df[col].fillna(df[col].mean(), inplace=True)
-            else:
-                # Categorical/string: fill with mode or "No Data"
-                try:
-                    mode_value = df[col].mode()[0]
-                except IndexError:
-                    mode_value = "No Data"
-                df[col].fillna(mode_value, inplace=True)
+    def __init__(self, df: pd.DataFrame, **kwargs):
+        self.reference_df = df.copy()
 
-    return df
+    def impute(self, data):
+        if isinstance(data, pd.Series):
+            return self._impute_dataframe(pd.DataFrame(data).T).iloc[0]
+        elif isinstance(data, pd.DataFrame):
+            return self._impute_dataframe(data.copy())
+        else:
+            raise TypeError("Input must be a pandas Series or DataFrame.")
+
+    def _impute_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        for col in df.columns:
+            if col not in self.reference_df.columns:
+                raise ValueError(f"Column '{col}' not found in reference DataFrame.")
+
+            if df[col].isnull().any():
+                ref_col = self.reference_df[col]
+                if pd.api.types.is_numeric_dtype(ref_col):
+                    df[col].fillna(ref_col.mean(), inplace=True)
+                else:
+                    try:
+                        mode_value = ref_col.mode()[0]
+                    except IndexError:
+                        mode_value = "No Data"
+                    df[col].fillna(mode_value, inplace=True)
+
+        return df

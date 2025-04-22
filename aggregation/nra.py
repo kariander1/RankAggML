@@ -30,11 +30,13 @@ def aggregate(
 
     done = False
     while not done:
+        updated_indices = set()
         for col in cols:
             if ptrs[col] >= n:
                 continue
-
+            
             idx = sorted_indices[col][ptrs[col]]
+            updated_indices.add(idx)
             ptrs[col] += 1
             sorted_accesses += 1
 
@@ -47,14 +49,15 @@ def aggregate(
             seen_values[idx][col] = val
 
         # After each round, recompute bounds for all seen items
-        for idx in seen_values:
+        for idx in updated_indices:
             partial = pd.Series({**min_per_col, **seen_values[idx]})
             lower_bounds[idx] = agg_func(partial)
-
+            
+        for idx in seen_values:
             partial = pd.Series({**best_seen, **seen_values[idx]})
             upper_bounds[idx] = agg_func(partial)
 
-        if len(lower_bounds) >= k:
+        if len(lower_bounds) > k:
             lower_bounds_series = pd.Series(lower_bounds)
             upper_bounds_series = pd.Series(upper_bounds)
 

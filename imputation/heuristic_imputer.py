@@ -83,7 +83,8 @@ class HeuristicImputer:
         If df is None, imputes the original training data used in init.
         """
         df = df.copy() if df is not None else self.df.copy()
-
+        if isinstance(df, pd.Series):
+            return self.impute(df.to_frame().T).iloc[0]
         # Heuristic rules
         if "earliest_year" in df.columns:
             df["earliest_year"] = df.progress_apply(self._impute_earliest_year, axis=1)

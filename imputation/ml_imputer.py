@@ -7,7 +7,7 @@ import joblib
 from sklearn.metrics import r2_score
 from sklearn.neural_network import MLPRegressor
 from typing import Union
-
+from imputation.basic_imputer import BasicImputer
 
 
 class MLSalesImputer:
@@ -23,7 +23,7 @@ class MLSalesImputer:
         self.cache_dir = cache_dir
         self.model_class = model_class
         self.model_kwargs = kwargs
-
+        self.basic_imputer = BasicImputer(df, **kwargs)
         if self.use_cache:
             os.makedirs(self.cache_dir, exist_ok=True)
 
@@ -82,29 +82,49 @@ class MLSalesImputer:
     def impute_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Impute missing sales values in a full DataFrame.
+        Each missing value is imputed using the model with the highest R² score applicable to that row.
         """
         df = df.copy()
+        
         for col in self.sales_cols:
             if col not in df.columns:
                 df[col] = np.nan
 
         for target_col in self.sales_cols:
             missing_mask = df[target_col].isnull()
-
             if not missing_mask.any():
                 continue
 
+            # Store candidate imputations and their R² scores
+            candidate_preds = pd.Series(index=df.index, dtype=float)
+            best_r2s = pd.Series(index=df.index, dtype=float)
+
             for feature_subset in self._get_feature_subsets(target_col):
                 feature_subset = tuple(sorted(feature_subset))  # ensure consistent order
+                model = self.models.get((target_col, feature_subset))
+                r2 = self.model_scores.get((target_col, feature_subset), -np.inf)
+
+                if model is None:
+                    continue
+
                 subset_mask = df[list(feature_subset)].notnull().all(axis=1)
                 applicable_mask = missing_mask & subset_mask
 
                 if applicable_mask.any():
                     X_missing = df.loc[applicable_mask, list(feature_subset)]
-                    model = self.models.get((target_col, feature_subset))
-                    if model is not None:
-                        predictions = model.predict(X_missing)
-                        df.loc[applicable_mask, target_col] = predictions
+                    predictions = model.predict(X_missing)
+
+                    for idx, pred in zip(X_missing.index, predictions):
+                        # Only use this prediction if it has higher r2 than previous
+                        if pd.isna(candidate_preds.loc[idx]) or r2 > best_r2s.loc[idx]:
+                            candidate_preds.loc[idx] = pred
+                            best_r2s.loc[idx] = r2
+
+            # Apply the best predictions
+            df.loc[candidate_preds.notnull(), target_col] = candidate_preds[candidate_preds.notnull()]
+
+        # Fallback for any remaining NaNs (e.g., non-sales columns or unhandled cases)
+        df = self.basic_imputer.impute(df)
 
         return df
 
@@ -118,11 +138,12 @@ class MLSalesImputer:
 
                 model = self.models[(target_col, known_cols)]
                 r2 = self.model_scores[(target_col, known_cols)]
-                # if r2> 0.7:  # only use models with reasonable R² score
+                # if r2> 0.97:  # only use models with reasonable R² score
                 X = series[list(known_cols)].to_frame().T
                 prediction = model.predict(X)[0]
-                series[target_col] = prediction  # scale by R² score
-                # series[target_col] = prediction * r2  # scale by R² score
+                # series[target_col] = prediction
+                # series[target_col] = prediction*(1+(1-r2))  # scale by R² score
+                series[target_col] = prediction * r2  # scale by R² score
 
         return series
 

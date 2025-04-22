@@ -24,7 +24,8 @@ def aggregate(
         col: df[col].sort_values(ascending=False).index.tolist()
         for col in cols
     }
-    min_per_col = df.min().to_dict()
+    
+    min_per_col = pd.Series(df.min().to_dict())
     # Access tracking
     sorted_accesses = 0
     random_accesses = 0  # NRA does not use random access
@@ -38,11 +39,13 @@ def aggregate(
 
     done = False
     while not done:
+        updated_indices = set()
         for col in cols:
             if ptrs[col] >= n:
                 continue
 
             idx = sorted_indices[col][ptrs[col]]
+            updated_indices.add(idx)
             ptrs[col] += 1
             sorted_accesses += 1
 
@@ -55,24 +58,30 @@ def aggregate(
             seen_values[idx][col] = val
 
         # After each round, recompute bounds for all seen items
-        for idx in seen_values:
-            
-            partial = pd.Series({**min_per_col, **seen_values[idx]})
-            lower_bounds[idx] = agg_func(partial)
-            
+        for idx in updated_indices:
             # Upper bound with imputation
             raw_partial = df_unscored.loc[idx,unscored_cols].copy()
-            raw_partial[unscored_cols] = [seen_values[idx].get(col, pd.NA) for col in cols]
+            unseed_cols = list(set(unscored_cols)-set([score_column_mapping[col] for col in list(seen_values[idx].keys())]))
+            raw_partial[unseed_cols] = pd.NA
 
             imputed_partial = imputer(raw_partial)
             imputed_scores = scorer.score(imputed_partial.to_frame().T).iloc[0].dropna()
             # scores_imputed = 
+            
+            
+            # partial = pd.Series({**min_per_col, **seen_values[idx]})
+            # take max with min_per_col:
+            imputed_scores = pd.Series.combine(imputed_scores, min_per_col, func=max)
+
+            lower_bounds[idx] = agg_func(imputed_scores)
+            
+        for idx in seen_values:
             # lower_bounds[idx] = agg_func(imputed_scores)
+            # partial = pd.Series({**best_seen, **imputed_scores})
+            partial = pd.Series({**best_seen, **seen_values[idx]})
+            upper_bounds[idx] = agg_func(partial)
 
-            # partial = pd.Series({**best_seen, **seen_values[idx]})
-            upper_bounds[idx] = agg_func(imputed_scores)
-
-        if len(lower_bounds) >= k:
+        if len(lower_bounds) > k:
             lower_bounds_series = pd.Series(lower_bounds)
             upper_bounds_series = pd.Series(upper_bounds)
 
@@ -104,5 +113,5 @@ def aggregate(
         "ranking": pd.Index(top_k_indices),
         "sorted_accesses": sorted_accesses,
         "random_accesses": random_accesses,
-        "method": "nra"
+        "method": "nra_w_impute"
     }
