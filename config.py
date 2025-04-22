@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Literal
+from typing import Union, List
 
 @dataclass
 class Config:
@@ -27,5 +28,5 @@ class Config:
     aggregator_kwargs: dict = field(default_factory=lambda: {})
     agg_function_name: str = "sum"
     
-    k: int = field(default_factory=lambda: [1,2,3,4,5,6,7,8,9,10,15,20])
+    k: Union[int, List[int]] = field(default_factory=lambda: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20])
     seed: int = 42
