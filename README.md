@@ -45,6 +45,8 @@ Example for NRA w/impute algorithm:
 ```bash
 python main.py --config configs\exp_all_algs\config_nra_impute.yaml
 ```
+
+This will train the imputers and will save them in the `.cache` directory.
 #### ✅ Option 2: Run with Explicit Arguments
 
 ```bash
